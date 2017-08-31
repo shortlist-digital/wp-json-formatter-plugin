@@ -1,0 +1,10 @@
+{
+    "name": "shortlist-digital/wp-json-formatter-plugin",
+    "description": "Plugin that format the default response from the Wordpress Json api",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Shortlist\\Croissant\\WpJsonFormatter\\": "src/"
+        }
+    }
+}
