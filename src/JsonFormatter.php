@@ -1,6 +1,6 @@
 <?php
 
-namespace Shortlist\Croissant\WpJsonFormatter;
+namespace ShortlistMedia\WpJsonFormatter;
 
 class JsonFormatter
 {

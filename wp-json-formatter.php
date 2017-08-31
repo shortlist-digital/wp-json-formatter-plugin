@@ -10,8 +10,5 @@
 * License: MIT
 */
 
-// this will be removed from here when it is added to the main file
-require __DIR__ . '/vendor/autoload.php';
-
-$formatter = new Shortlist\Croissant\WpJsonFormatter\JsonFormatter;
+$formatter = new ShortlistMedia\WpJsonFormatter\JsonFormatter;
 $formatter->register();
