@@ -19,27 +19,35 @@ class JsonFormatter
     /**
      * Remove unused images sizes from images and hero_image widgets
      */
-    public function remove_unused_images( $result ) {
-        $result = $this->remove_from_image_widget( $result );
-        $result = $this->remove_from_hero_image( $result );
+    public function remove_unused_images( $json_response ) {
+        if ( $json_response->status !== 200 ) {
+            return $json_response;
+        }
 
-        return $result;
+        $json_response = $this->remove_from_widgets( $json_response );
+        $json_response = $this->remove_from_hero_image( $json_response );
+
+        return $json_response;
     }
 
     /**
      * Remove the escaped strings (mainly quotation) from the post title
      * and from taxonomies titles
      */
-    public function fix_titles( $result ) {
-        $result->data['title']['rendered'] = html_entity_decode( $result->data['title']['rendered'] );
+    public function fix_titles( $json_response ) {
+        if ( $json_response->status !== 200 ) {
+            return $json_response;
+        }
 
-        foreach ( $result->data['acf'] as $key => &$field ) {
+        $json_response->data['title']['rendered'] = html_entity_decode( $json_response->data['title']['rendered'] );
+
+        foreach ( $json_response->data['acf'] as $key => &$field ) {
             if ( in_array( $key, [ 'category', 'tags' ], true ) ) {
                 $field = $this->fix_taxonomy_title( $field );
             }
         }
 
-        return $result;
+        return $json_response;
     }
 
     private function fix_taxonomy_title( $taxonomy ) {
@@ -54,19 +62,29 @@ class JsonFormatter
         return $taxonomy;
     }
 
-    private function remove_from_image_widget( $result ) {
+    private function remove_from_widgets( $result ) {
         if ( ! isset( $result->data['acf']['widgets'] ) ) {
             return $result;
         }
 
+        $widgets_with_images = [
+            'image'          => 'image',
+            'feature-box'    => 'image',
+            'gallery'        => 'gallery_items',
+            'image-carousel' => 'images'
+        ];
+
         foreach ( $result->data['acf']['widgets'] as &$widget ) {
-            if ( $widget['acf_fc_layout'] !== 'image' ) {
+            if ( ! in_array( $widget['acf_fc_layout'], array_keys( $widgets_with_images ), true ) ) {
                 continue;
             }
 
-            foreach ( $widget['image']['sizes'] as $key => $sizes ) {
-                if ( ! $this->is_size_allowed( $key ) ) {
-                    unset( $widget['image']['sizes'][$key] );
+            $element = &$widget[ $widgets_with_images[ $widget['acf_fc_layout'] ] ];
+            if ( isset( $element['sizes'] ) ) {
+                $element['sizes'] = $this->unset_sizes( $element['sizes'] );
+            } else {
+                foreach( $element as &$image_element ) {
+                    $image_element['sizes'] = $this->unset_sizes( $image_element['sizes'] );
                 }
             }
         }
@@ -80,14 +98,20 @@ class JsonFormatter
         }
 
         foreach ( $result->data['acf']['hero_images'] as &$hero ) {
-            foreach ( $hero['sizes'] as $key => $sizes ) {
-                if ( ! $this->is_size_allowed( $key ) ) {
-                    unset( $hero['sizes'][$key] );
-                }
-            }
+            $hero['sizes'] = $this->unset_sizes( $hero['sizes'] );
         }
 
         return $result;
+    }
+
+    private function unset_sizes( $image_element ) {
+        foreach ( $image_element as $key => $sizes ) {
+            if ( ! $this->is_size_allowed( $key ) ) {
+                unset( $image_element[$key] );
+            }
+        }
+
+        return $image_element;
     }
 
     private function is_size_allowed( $size ) {
