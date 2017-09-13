@@ -14,7 +14,15 @@ class JsonFormatter
     public function register() {
         add_filter( 'rest_post_dispatch', [ $this, 'remove_unused_images' ] );
         add_filter( 'rest_post_dispatch', [ $this, 'fix_titles' ] );
+		add_filter( 'rest_prepare_category', [ $this, 'remove_acf_from_embedded_categories' ]);
     }
+
+	public function remove_acf_from_embedded_categories($response) {
+		if (isset($response->data['acf'])) {
+			unset($response->data['acf']);
+		}
+		return $response;
+	}
 
     /**
      * Remove unused images sizes from images and hero_image widgets
