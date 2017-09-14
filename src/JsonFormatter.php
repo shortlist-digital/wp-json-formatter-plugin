@@ -12,17 +12,22 @@ class JsonFormatter
     ];
 
     public function register() {
-	add_filter( 'rest_post_dispatch', [ $this, 'remove_unused_images' ] );
-	add_filter( 'rest_post_dispatch', [ $this, 'fix_titles' ] );
-	add_filter( 'rest_prepare_category', [ $this, 'remove_acf_from_embedded_categories' ]);
+    add_filter( 'rest_post_dispatch', [ $this, 'remove_unused_images' ] );
+    add_filter( 'rest_post_dispatch', [ $this, 'fix_titles' ] );
+    add_filter( 'rest_prepare_category', [ $this, 'remove_acf_from_embedded_categories' ]);
     }
 
-	public function remove_acf_from_embedded_categories($response) {
-		if (isset($response->data['acf'])) {
-			unset($response->data['acf']);
-		}
-		return $response;
-	}
+    public function remove_acf_from_embedded_categories($response) {
+        // we don't want to remove the category acf on the category endpoint
+        if ( strpos($_SERVER["REQUEST_URI"], "v2/categories") !== false ) {
+            return $response;
+        }
+
+        if (isset($response->data['acf'])) {
+            unset($response->data['acf']);
+        }
+        return $response;
+    }
 
     /**
      * Remove unused images sizes from images and hero_image widgets
@@ -47,11 +52,15 @@ class JsonFormatter
             return $json_response;
         }
 
-        $json_response->data['title']['rendered'] = html_entity_decode( $json_response->data['title']['rendered'] );
+        if (isset($json_response->data['title']['rendered'])) {
+            $json_response->data['title']['rendered'] = html_entity_decode( $json_response->data['title']['rendered'] );
+        }
 
-        foreach ( $json_response->data['acf'] as $key => &$field ) {
-            if ( in_array( $key, [ 'category', 'tags' ], true ) ) {
-                $field = $this->fix_taxonomy_title( $field );
+        if (isset($json_response->data['acf'])) {
+            foreach ( $json_response->data['acf'] as $key => &$field ) {
+                if ( in_array( $key, [ 'category', 'tags' ], true ) ) {
+                    $field = $this->fix_taxonomy_title( $field );
+                }
             }
         }
 
