@@ -80,7 +80,7 @@ class JsonFormatter
     }
 
     private function remove_from_widgets( $result ) {
-        if ( ! isset( $result->data['acf']['widgets'] ) ) {
+        if ( empty( $result->data['acf']['widgets'] ) ) {
             return $result;
         }
 
@@ -110,7 +110,7 @@ class JsonFormatter
     }
 
     private function remove_from_hero_image( $result ) {
-        if ( ! isset( $result->data['acf']['hero_images'] ) ) {
+        if ( empty( $result->data['acf']['hero_images'] ) ) {
             return $result;
         }
 
